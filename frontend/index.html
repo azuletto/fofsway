@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Fofsway Lanches</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Cabeçalho verde com logo e botões -->
+    <header class="header-verde">
+      <div class="logo-area">
+        <span class="logo-fofsway">Fofsway</span>
+        <span class="logo-lanches">Lanches</span>
+      </div>
+      <div class="botoes-nav">
+        <button id="btnLanchesProntos" class="nav-btn active">Lanches Prontos</button>
+        <button id="btnMontarLanche" class="nav-btn">Montar Lanche</button>
+        <span id="navRealce" class="nav-realce" aria-hidden="true"></span>
+      </div>
+      <button id="btnAbrirCarrinho" class="nav-icon-btn" aria-label="Abrir carrinho">
+        <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+        <span id="badgeCarrinho" class="badge-carrinho" aria-hidden="true"></span>
+      </button>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="main-content">
+      <!-- Seção Lanches Prontos (cards) -->
+      <section id="secaoLanchesProntos" class="secao ativa">
+        <h2>Nossos Lanches</h2>
+        <div class="cards-grid" id="cardsGrid"></div>
+      </section>
+
+      <!-- Seção Montar Lanche (customização) -->
+      <section id="secaoMontarLanche" class="secao">
+        <h2>Monte seu Lanche do seu jeito</h2>
+        <form id="formMontagem" class="montagem-form">
+          <div class="categorias-container">
+            <!-- Categorias serão preenchidas via JS -->
+          </div>
+          <div class="quantidade-area">
+            <label for="quantidadeMontagem">Quantidade:</label>
+            <input type="number" id="quantidadeMontagem" min="1" value="1">
+          </div>
+          <button type="button" id="btnAdicionarMontagem" class="btn-acao">Adicionar ao Carrinho</button>
+        </form>
+        <div id="mensagemValidacaoMontagem" class="mensagem-erro"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <dialog id="carrinhoDialog" class="carrinho-dialog">
+    <div class="carrinho-dialog-conteudo">
+      <div class="carrinho-dialog-topo">
+        <div>
+          <p class="dialog-subtitulo">Seu pedido</p>
+          <h3><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i> Carrinho</h3>
+        </div>
+        <button id="btnFecharCarrinho" type="button" class="dialog-fechar" aria-label="Fechar carrinho">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="carrinho-dialog-corpo">
+        <section class="carrinho painel-modal">
+          <div id="carrinhoLista"></div>
+          <div class="carrinho-acoes">
+            <button id="btnLimparCarrinho" class="btn-secundario" type="button">Limpar Carrinho</button>
+            <div class="cliente-area">
+              <input type="text" id="nomeCliente" placeholder="Seu nome" class="input-cliente">
+              <button id="btnEnviarPedido" class="btn-principal" type="button">Enviar Pedido</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="pedidos-finalizados painel-modal">
+          <h4><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Pedidos Realizados</h4>
+          <div id="pedidosLista"></div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="itemAdicionadoDialog" class="confirmacao-dialog">
+    <div class="confirmacao-conteudo">
+      <div id="itemAdicionadoIcone" class="confirmacao-icone">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+      </div>
+      <p id="itemAdicionadoTitulo" class="confirmacao-titulo">Item adicionado ao carrinho</p>
+      <p id="itemAdicionadoTexto" class="confirmacao-texto"></p>
+      <button id="btnFecharConfirmacao" type="button" class="btn-confirmacao">Continuar</button>
+    </div>
+  </dialog>
+
+  <script src="pedido.js"></script>
+</body>
+</html>
