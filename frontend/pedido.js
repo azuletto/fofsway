@@ -386,9 +386,25 @@ function setupMontagemUI() {
   document.getElementById('btnProximaEtapa').addEventListener('click', () => goToStep(montagemState.currentStep + 1));
   document.getElementById('btnEtapaAnterior').addEventListener('click', () => goToStep(montagemState.currentStep - 1));
   document.getElementById('btnAdicionarMontagemTopo').addEventListener('click', async () => {
-    // build montagem from selecionados
+    // Validar obrigatórios: pão, proteína (carne) e queijo
+    const obrigatorios = [
+      { key: 'pao', nome: 'Pão' },
+      { key: 'carne', nome: 'Proteína' },
+      { key: 'queijo', nome: 'Queijo' }
+    ];
+    for (const obrig of obrigatorios) {
+      if (!montagemState.selecionados[obrig.key]) {
+        mostrarNotificacao(`Selecione uma opção de ${obrig.nome} antes de adicionar ao carrinho.`, 'aviso', 'Seleção obrigatória');
+        return;
+      }
+    }
+
     const ingredientes = montagemState.selecionados;
     const quantidade = parseInt(document.getElementById('quantidadeMontagem').value) || 1;
+    if (quantidade <= 0) {
+      mostrarNotificacao('Quantidade deve ser maior que zero.', 'aviso', 'Quantidade inválida');
+      return;
+    }
     const precoBase = calcularPrecoMontagem(ingredientes);
     const montagem = { ingredientes, quantidade, precoBase };
     const sucesso = await adicionarMontagemLancheAoCarrinho(montagem);

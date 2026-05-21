@@ -162,7 +162,7 @@ body {
 .nav-realce {
   position: absolute;
   left: 0;
-  bottom: -0.85rem;
+  bottom: -1.60rem;
   height: 4px;
   width: 13.2rem;
   border-radius: 0;
@@ -510,21 +510,21 @@ body {
 /* Montagem cards (centrais) */
 .card-principal {
   width: 100%;
-  height: 320px; /* restaurado para 320px - aumenta apenas a imagem interna */
+  height: 200px; /* reduzido de 320px - card mais baixo e horizontal */
   border-radius: 12px;
   background: white;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px;
+  gap: 4px;
+  padding: 10px;
   box-shadow: 0 8px 30px rgba(7, 40, 20, 0.06);
   border: 1px solid rgba(11,30,22,0.04);
 }
 .card-principal-img {
-  width: 128px;
-  height: 128px; /* aumentado somente para cards da tela Montar Lanche */
+  width: 96px;
+  height: 96px; /* reduzida proporcionalmente para card mais baixo */
   object-fit: cover;
   border-radius: 8px;
 }
@@ -881,12 +881,12 @@ body {
 #resumoTabela tbody td { color:#475569; }
 
 .montagem-centro { min-height:260px; display:flex; align-items:center; justify-content:center; min-height:0; }
-.principais-cards { display:flex; gap:1rem; width:100%; justify-content:center; align-items:center; }
-.card-principal { background:#fff; border-radius:0.9rem; padding:0.8rem; width:24%; min-width:144px; box-shadow:0 8px 22px rgba(8,18,12,0.06); cursor:pointer; transition: transform 0.3s, box-shadow 0.3s; display:flex; flex-direction:column; gap:0.48rem; align-items:center; }
+.principais-cards { display:flex; gap:1rem; width:100%; justify-content:center; align-items:center; margin-top: 14px; }
+.card-principal { background:#fff; border-radius:0.9rem; padding:0.6rem; width:36%; min-width:180px; box-shadow:0 8px 22px rgba(8,18,12,0.06); cursor:pointer; transition: transform 0.3s, box-shadow 0.3s; display:flex; flex-direction:column; gap:0.32rem; align-items:center; }
 .card-principal.selected { transform:translateY(-6px); box-shadow:0 18px 34px rgba(11,94,46,0.14); border:2px solid #0b5e2e; }
-.card-principal-img { width:102px; height:102px; object-fit:cover; border-radius:0.65rem; background:#f7faf8; display:block; }
-.card-principal .nome-opcao { font-weight:900; color:#0b5e2e; font-size:1.02rem; text-align:center; }
-.card-principal .valor-opcao { font-weight:900; color:#c05621; font-size:1rem; text-align:center; }
+.card-principal-img { width:78px; height:78px; object-fit:cover; border-radius:0.65rem; background:#f7faf8; display:block; }
+.card-principal .nome-opcao { font-weight:900; color:#0b5e2e; font-size:0.92rem; text-align:center; }
+.card-principal .valor-opcao { font-weight:900; color:#c05621; font-size:0.88rem; text-align:center; }
 
 .montagem-others { padding:0.6rem; max-height:100%; overflow-y:auto; padding-right:0.35rem; }
 .montagem-others h4 { margin:0 0 0.5rem; }
