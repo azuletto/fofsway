@@ -13,8 +13,10 @@
     <!-- Cabeçalho verde com logo e botões -->
     <header class="header-verde">
       <div class="logo-area">
-        <span class="logo-fofsway">Fofsway</span>
-        <span class="logo-lanches">Lanches</span>
+        <div class="logo-bloco">
+          <span class="logo-fofsway"><span class="logo-fof">Fof</span><span class="logo-sway">sway</span></span>
+          <span class="logo-lanches">Lanches</span>
+        </div>
       </div>
       <div class="botoes-nav">
         <button id="btnLanchesProntos" class="nav-btn active">Lanches Prontos</button>
@@ -38,17 +40,49 @@
       <!-- Seção Montar Lanche (customização) -->
       <section id="secaoMontarLanche" class="secao">
         <h2>Monte seu Lanche do seu jeito</h2>
-        <form id="formMontagem" class="montagem-form">
-          <div class="categorias-container">
-            <!-- Categorias serão preenchidas via JS -->
+        <div class="montagem-area">
+          <div class="montagem-topbar">
+              <div class="passo-titulo" id="passoTitulo">PASSO 1 ESCOLHA PÃO</div>
+              <div class="passos-tags" id="passosTags">
+                <span class="passo-tag" data-step="0">PÃO</span>
+                <span class="passo-tag" data-step="1">PROTEÍNA</span>
+                <span class="passo-tag" data-step="2">QUEIJO</span>
+                <span class="passo-tag" data-step="3">SALADAS</span>
+                <span class="passo-tag" data-step="4">ADICIONAIS</span>
+              </div>
+            </div>
+
+          <div class="montagem-grid">
+            <aside class="montagem-resumo" id="montagemResumo">
+              <h4>Resumo da Montagem</h4>
+              <table id="resumoTabela">
+                <thead><tr><th>Item</th><th>Valor</th></tr></thead>
+                <tbody></tbody>
+                <tfoot><tr><th>Total</th><th id="resumoTotal">R$ 0,00</th></tr></tfoot>
+              </table>
+            </aside>
+
+            <div class="montagem-centro" id="montagemCentro">
+              <div class="principais-cards" id="principaisCards"></div>
+            </div>
+
+            <aside class="montagem-others" id="montagemOthers">
+              <h4>Outros</h4>
+              <div id="othersCards"></div>
+            </aside>
           </div>
-          <div class="quantidade-area">
+
+          <div class="montagem-quantidade">
             <label for="quantidadeMontagem">Quantidade:</label>
             <input type="number" id="quantidadeMontagem" min="1" value="1">
           </div>
-          <button type="button" id="btnAdicionarMontagem" class="btn-acao">Adicionar ao Carrinho</button>
-        </form>
-        <div id="mensagemValidacaoMontagem" class="mensagem-erro"></div>
+          <div id="mensagemValidacaoMontagem" class="mensagem-erro"></div>
+          <div class="montagem-actions-fixed" aria-hidden="false">
+            <button id="btnEtapaAnterior" class="btn-pequeno">Etapa Anterior</button>
+            <button id="btnAdicionarMontagemTopo" class="btn-principal">Adicionar ao Carrinho</button>
+            <button id="btnProximaEtapa" class="btn-pequeno">Próxima Etapa</button>
+          </div>
+        </div>
       </section>
 
     </main>
