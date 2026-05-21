@@ -169,9 +169,11 @@ async function adicionarMontagemLancheAoCarrinho(montagem) {
     mostrarNotificacao('Quantidade inválida.', 'aviso', 'Quantidade inválida');
     return false;
   }
+  const descricao = gerarDescricaoMontagem(montagem);
   const item = {
     tipo: 'customizado',
     nome: 'Lanche Customizado',
+    descricao: descricao || 'Lanche customizado',
     ingredientes: ingredientes,
     preco: precoBase,
     quantidade: quantidade
@@ -338,33 +340,6 @@ const categoriasMontagem = {
   }
 };
 
-function renderizarFormMontagem() {
-  const container = document.querySelector('.categorias-container');
-  if (!container) {
-    // montagem UI foi substituída pela nova área de etapas — nada a renderizar aqui
-    console.warn('renderizarFormMontagem: container .categorias-container não encontrado, pulando renderização tradicional.');
-    return;
-  }
-  container.innerHTML = '';
-  for (const [key, cat] of Object.entries(categoriasMontagem)) {
-    const divCategoria = document.createElement('div');
-    divCategoria.className = 'categoria';
-    divCategoria.innerHTML = `<h4>${cat.nome}</h4><div class="opcoes" id="${key}-opcoes"></div>`;
-    container.appendChild(divCategoria);
-    const opcoesDiv = divCategoria.querySelector('.opcoes');
-    cat.opcoes.forEach(op => {
-      const input = document.createElement('input');
-      input.type = cat.tipo;
-      input.name = key;
-      input.value = op;
-      const label = document.createElement('label');
-      label.appendChild(input);
-      label.appendChild(document.createTextNode(op));
-      opcoesDiv.appendChild(label);
-    });
-  }
-}
-
 /* --- Nova UI de etapas para "Montar Lanche" --- */
 const optionPrices = {
   'Pão Australiano': 2.0,
@@ -528,6 +503,31 @@ function obterItensResumoMontagem() {
   }
 
   return itens;
+}
+
+function gerarDescricaoMontagem(montagem) {
+  const selecionados = montagem?.ingredientes?.selecionados || {};
+  const quantidades = montagem?.ingredientes?.quantidades || {};
+  const partes = [];
+
+  if (selecionados.pao) {
+    partes.push(`Base: ${selecionados.pao}`);
+  }
+
+  for (const step of montagemSteps) {
+    if (step.key === 'pao') continue;
+    const valores = Array.isArray(selecionados[step.key]) ? selecionados[step.key] : [];
+    if (!valores.length) continue;
+
+    const detalhes = valores.map((nome) => {
+      const quantidade = quantidades?.[step.key]?.[nome] || 1;
+      return quantidade > 1 ? `${nome} x${quantidade}` : nome;
+    });
+
+    partes.push(`${step.label}: ${detalhes.join(', ')}`);
+  }
+
+  return partes.join(' | ');
 }
 
 function obterNomePreviewIngrediente(valor) {
@@ -978,11 +978,15 @@ function exibirPedidos(pedidos) {
   }
   let html = '';
   pedidos.slice().reverse().forEach(ped => {
+    const statusNormalizado = normalizarStatusPedido(ped.status);
+    const statusTexto = statusNormalizado === 'pronto' ? 'Pronto' : 'Em produção';
     html += `<div class="pedido-item">
-      <strong>#${ped.id}</strong> - ${ped.cliente}<br>
+      <div class="pedido-item-topo">
+        <strong>#${ped.id}</strong> - ${ped.cliente}
+        <span class="pedido-item-status ${statusNormalizado === 'pronto' ? 'status-pronto' : 'status-producao'}">${statusTexto}</span>
+      </div>
       ${ped.itens.length} item(ns) - Total: R$ ${calcularTotalPedido(ped.itens).toFixed(2)}<br>
       ${ped.observacao ? `<small>Observação: ${ped.observacao}</small><br>` : ''}
-      ${ped.itens.some((item) => item.tipo === 'customizado' && item.ingredientes?.selecionados) ? '<small>Montagem com múltiplas seleções e quantidades.</small><br>' : ''}
       <small>${new Date(ped.data).toLocaleString()}</small>
     </div>`;
   });
@@ -991,6 +995,14 @@ function exibirPedidos(pedidos) {
 
 function calcularTotalPedido(itens) {
   return itens.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+}
+
+function normalizarStatusPedido(status) {
+  const valor = String(status || 'em produção').trim().toLowerCase();
+  if (valor === 'pronto' || valor === 'finalizado') {
+    return 'pronto';
+  }
+  return 'em produção';
 }
 
 // Desafio extra: sistema de fidelidade (pontos)
@@ -1008,7 +1020,6 @@ function adicionarPontosFidelidade(cliente) {
 // Inicialização da página
 function init() {
   renderizarCardsLanches();
-  renderizarFormMontagem();
   // inicializa UI de etapas para montar lanche
   try { setupMontagemUI(); } catch (e) { /* non-blocking */ }
   // melhora controle de quantidade: botão + / -

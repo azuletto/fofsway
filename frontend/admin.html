@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Fofsway - Painel ADM</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="admin-body">
+  <div class="app-container">
+    <header class="header-verde">
+      <div class="logo-area">
+        <div class="logo-bloco">
+          <span class="logo-fofsway"><span class="logo-fof">Fof</span><span class="logo-sway">sway</span></span>
+          <span class="logo-lanches">Painel ADM</span>
+        </div>
+      </div>
+      <div class="botoes-nav">
+        <button id="btnVoltarLoja" class="nav-btn">Voltar à loja</button>
+      </div>
+      <button id="btnSairAdm" class="nav-icon-btn" type="button" aria-label="Sair do painel" hidden>
+        <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <main class="admin-page">
+      <section id="adminLoginView" class="admin-login-view painel-modal">
+        <p class="dialog-subtitulo">Acesso restrito</p>
+        <h2>Painel de Pedidos</h2>
+        <p class="admin-descricao">Use o login hardcoded do backend para ver todos os pedidos, com cliente e token de sessão.</p>
+
+        <form id="adminLoginForm" class="admin-login-form">
+          <div class="admin-campo">
+            <label for="adminLogin">Login</label>
+            <input id="adminLogin" class="admin-input" type="text" autocomplete="username" placeholder="adm">
+          </div>
+          <div class="admin-campo">
+            <label for="adminSenha">Senha</label>
+            <input id="adminSenha" class="admin-input" type="password" autocomplete="current-password" placeholder="••••••••">
+          </div>
+          <button class="btn-principal admin-btn-entrar" type="submit">Entrar</button>
+          <div id="adminLoginErro" class="mensagem-erro"></div>
+        </form>
+      </section>
+
+      <section id="adminDashboardView" class="admin-dashboard painel-modal" hidden>
+        <div class="admin-dashboard-topo">
+          <div>
+            <p class="dialog-subtitulo">Pedidos consolidados</p>
+            <h2>Todos os pedidos</h2>
+          </div>
+          <div class="admin-dashboard-acoes">
+            <button id="btnAtualizarPedidos" class="btn-secundario" type="button">Atualizar</button>
+          </div>
+        </div>
+
+        <div class="admin-resumo" id="adminResumo"></div>
+        <div id="adminPedidosLista" class="admin-pedidos-lista"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
