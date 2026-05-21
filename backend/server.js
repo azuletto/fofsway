@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = 8080;
@@ -20,6 +21,13 @@ let proximoIdPedido = 1;
 app.get('/listarPedidos', (req, res) => {
   res.json({ pedidos: pedidosRealizados });
 });
+
+// Rota para obter o carrinho atual
+app.get('/listarCarrinho', (req, res) => {
+  res.json({ carrinho: carrinhoAtual });
+});
+
+// (removido) endpoint /listarImagensCustom — frontend usa caminhos estáticos
 
 // Rota para adicionar item ao carrinho
 app.post('/adicionarCarrinho', (req, res) => {
