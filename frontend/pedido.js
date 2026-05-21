@@ -114,6 +114,7 @@ async function deletarCarrinho() {
 // Função para enviar pedido (PUT)
 async function enviarPedido() {
   const nomeCliente = document.getElementById('nomeCliente').value.trim();
+  const observacaoPedido = document.getElementById('observacaoPedido')?.value.trim() || '';
   if (!nomeCliente) {
     mostrarNotificacao('Por favor, informe seu nome antes de enviar o pedido.', 'aviso', 'Campo obrigatório');
     return;
@@ -123,13 +124,17 @@ async function enviarPedido() {
     return;
   }
   try {
-    const response = await axiosInstance.put('/enviarPedido', { nomeCliente });
+    const response = await axiosInstance.put('/enviarPedido', { nomeCliente, observacaoPedido });
     mostrarNotificacao(response.data.mensagem ? `Pedido enviado! ${response.data.mensagem}` : 'Pedido enviado com sucesso!', 'sucesso', 'Pedido enviado');
     // Após enviar, o carrinho é esvaziado no backend, então atualizamos o estado local
     carrinho = [];
     clearCarrinhoLocal();
     atualizarCarrinhoUI();
     document.getElementById('nomeCliente').value = '';
+    const observacaoField = document.getElementById('observacaoPedido');
+    if (observacaoField) {
+      observacaoField.value = '';
+    }
     // Atualiza a lista de pedidos
     listarPedidos();
     // Desafio extra: adicionar pontos de fidelidade
@@ -183,7 +188,9 @@ const lanchesProntos = [
   { nome: 'FofFrango Club (Pesto)', descricao: 'Frango grelhado, queijo, tomate, alface e molho pesto artesanal.', preco: 28.90, categoria: 'geral' },
   { nome: 'FofVeggie Supreme (Clássico)', descricao: 'Queijo vegano, tomate, alface, cebola roxa, orégano e molho especial da casa.', preco: 28.90, categoria: 'vegana' },
   { nome: 'FofVeggie Supreme (Parmesão)', descricao: 'Queijo parmesão vegano, tomate, alface, orégano e maionese temperada vegana.', preco: 28.90, categoria: 'vegana' },
-  { nome: 'FofVeggie Supreme (Defumado)', descricao: 'Queijo vegano, tomate, alface, picles, molho defumado e toque de ervas.', preco: 28.90, categoria: 'vegana' }
+  { nome: 'FofVeggie Supreme (Defumado)', descricao: 'Queijo vegano, tomate, alface, picles, molho defumado e toque de ervas.', preco: 28.90, categoria: 'vegana' },
+  { nome: 'FofBacon Crunch', descricao: 'Hambúrguer artesanal, cheddar cremoso, bacon crocante, cebola caramelizada e molho barbecue.', preco: 28.90, categoria: 'geral' },
+  { nome: 'FofGreen Garden', descricao: 'Hambúrguer de grão-de-bico, queijo vegano, rúcula fresca, tomate seco e molho de alho vegano.', preco: 28.90, categoria: 'vegana' }
 ];
 
 const imagensLanches = {
@@ -240,14 +247,48 @@ function renderizarCardsLanches() {
     const card = document.createElement('div');
     card.className = 'card-lanche';
     const caminhoImagem = imagensLanches[lanche.nome] ? encodeURI(imagensLanches[lanche.nome]) : encodeURI(`assets/lanches_prontos/img/${lanche.nome}.png`);
+    const quantidadeId = `quantidade-${lanche.nome.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${idx}`;
     card.innerHTML = `
       <div class="card-conteudo">
         <img class="card-imagem" src="${caminhoImagem}" alt="${lanche.nome}" loading="lazy">
         <h3>${lanche.nome}</h3>
         <p>${lanche.descricao}</p>
-        <button class="btn-adicionar" data-idx="${idx}">ADICIONAR AO CARRINHO R$ ${lanche.preco.toFixed(2)}</button>
+        <div class="quantidade-card card-quantidade-card">
+          <label for="${quantidadeId}">Quantidade</label>
+          <div class="card-quantidade-stepper" role="group" aria-label="Quantidade de ${lanche.nome}">
+            <button type="button" class="card-quantidade-btn card-quantidade-menos" aria-label="Diminuir quantidade">−</button>
+            <input type="number" id="${quantidadeId}" class="card-quantidade-input" min="1" value="1" step="1" inputmode="numeric">
+            <button type="button" class="card-quantidade-btn card-quantidade-mais" aria-label="Aumentar quantidade">+</button>
+          </div>
+        </div>
+        <button class="btn-adicionar" type="button">ADICIONAR AO CARRINHO R$ ${lanche.preco.toFixed(2)}</button>
       </div>
     `;
+
+    const botao = card.querySelector('.btn-adicionar');
+    const quantidadeInput = card.querySelector('.card-quantidade-input');
+    const botaoMenos = card.querySelector('.card-quantidade-menos');
+    const botaoMais = card.querySelector('.card-quantidade-mais');
+
+    const ajustarQuantidade = (delta) => {
+      const atual = parseInt(quantidadeInput.value, 10);
+      const base = Number.isInteger(atual) && atual > 0 ? atual : 1;
+      const novaQuantidade = Math.max(1, base + delta);
+      quantidadeInput.value = novaQuantidade;
+      return novaQuantidade;
+    };
+
+    botaoMenos.addEventListener('click', () => ajustarQuantidade(-1));
+    botaoMais.addEventListener('click', () => ajustarQuantidade(1));
+    botao.addEventListener('click', () => {
+      const quantidade = parseInt(quantidadeInput.value, 10);
+      if (!Number.isInteger(quantidade) || quantidade <= 0) {
+        mostrarNotificacao('Quantidade deve ser maior que zero.', 'aviso', 'Quantidade inválida');
+        quantidadeInput.focus();
+        return;
+      }
+      adicionarLancheAoCarrinho(lanche, quantidade);
+    });
     grid.appendChild(card);
   };
 
@@ -261,14 +302,6 @@ function renderizarCardsLanches() {
     lanchesVeganos.forEach(criarCard);
   }
 
-  // Adiciona eventos aos botões
-  document.querySelectorAll('.btn-adicionar').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const idx = btn.getAttribute('data-idx');
-      const lanche = lanchesProntos[idx];
-      adicionarLancheAoCarrinho(lanche, 1);
-    });
-  });
 }
 
 // Configuração das categorias para montagem de lanche
@@ -366,7 +399,7 @@ const optionPrices = {
 };
 
 const montagemSteps = [
-  { key: 'pao', label: 'PÃO' },
+  { key: 'pao', label: 'BASE' },
   { key: 'carne', label: 'PROTEÍNA' },
   { key: 'queijo', label: 'QUEIJO' },
   { key: 'adicionais', label: 'SALADAS' },
@@ -375,37 +408,175 @@ const montagemSteps = [
 
 let montagemState = {
   currentStep: 0,
-  selecionados: {}
+  selecionados: {
+    pao: null,
+    carne: [],
+    queijo: [],
+    adicionais: [],
+    molhos: []
+  },
+  quantidades: {
+    carne: {},
+    queijo: {},
+    adicionais: {},
+    molhos: {}
+  }
 };
+
+function isCategoriaUnica(key) {
+  return key === 'pao';
+}
+
+function estaSelecionadoMontagem(key, option) {
+  if (isCategoriaUnica(key)) {
+    return montagemState.selecionados.pao === option;
+  }
+  return (montagemState.selecionados[key] || []).includes(option);
+}
+
+function obterQuantidadeMontagem(key, option) {
+  if (isCategoriaUnica(key)) {
+    return 1;
+  }
+  return montagemState.quantidades[key]?.[option] || 1;
+}
+
+function atualizarBotaoMontagemTopo() {
+  const botao = document.getElementById('btnAdicionarMontagemTopo');
+  if (!botao) return;
+
+  const possuiPao = Boolean(montagemState.selecionados.pao);
+  const possuiOutroItem = montagemSteps.some((step) => {
+    if (step.key === 'pao') {
+      return false;
+    }
+    return (montagemState.selecionados[step.key] || []).length > 0;
+  });
+
+  const habilitado = possuiPao && possuiOutroItem;
+  botao.disabled = !habilitado;
+  botao.setAttribute('aria-disabled', String(!habilitado));
+  botao.title = habilitado
+    ? 'Adicionar ao carrinho'
+    : 'Selecione pão e ao menos um item de outra categoria';
+}
+
+function definirQuantidadeMontagem(key, option, quantidade) {
+  if (isCategoriaUnica(key)) {
+    return;
+  }
+  const quantidadeValida = Math.max(1, parseInt(quantidade, 10) || 1);
+  if (!montagemState.quantidades[key]) {
+    montagemState.quantidades[key] = {};
+  }
+  montagemState.quantidades[key][option] = quantidadeValida;
+  if (!estaSelecionadoMontagem(key, option)) {
+    montagemState.selecionados[key].push(option);
+  }
+  renderResumo();
+  atualizarBotaoMontagemTopo();
+  renderCardsForStep(key);
+}
+
+function alternarSelecaoMontagem(key, option) {
+  if (isCategoriaUnica(key)) {
+    montagemState.selecionados.pao = option;
+    renderResumo();
+    atualizarBotaoMontagemTopo();
+    renderCardsForStep(key);
+    return;
+  }
+
+  const selecionados = montagemState.selecionados[key] || (montagemState.selecionados[key] = []);
+  const indice = selecionados.indexOf(option);
+
+  if (indice >= 0) {
+    selecionados.splice(indice, 1);
+    if (montagemState.quantidades[key]) {
+      delete montagemState.quantidades[key][option];
+    }
+  } else {
+    selecionados.push(option);
+    if (!montagemState.quantidades[key]) {
+      montagemState.quantidades[key] = {};
+    }
+    montagemState.quantidades[key][option] = montagemState.quantidades[key][option] || 1;
+  }
+
+  renderResumo();
+  atualizarBotaoMontagemTopo();
+  renderCardsForStep(key);
+}
+
+function obterItensResumoMontagem() {
+  const itens = [];
+
+  if (montagemState.selecionados.pao) {
+    itens.push({ categoria: 'PÃO', nome: montagemState.selecionados.pao, quantidade: 1 });
+  }
+
+  for (const step of montagemSteps) {
+    if (step.key === 'pao') continue;
+    const selecionados = montagemState.selecionados[step.key] || [];
+    selecionados.forEach((nome) => {
+      itens.push({
+        categoria: step.label,
+        nome,
+        quantidade: obterQuantidadeMontagem(step.key, nome)
+      });
+    });
+  }
+
+  return itens;
+}
+
+function obterNomePreviewIngrediente(valor) {
+  if (!valor) return null;
+  if (typeof valor === 'string') return valor;
+  if (Array.isArray(valor)) {
+    for (const item of valor) {
+      const preview = obterNomePreviewIngrediente(item);
+      if (preview) return preview;
+    }
+    return null;
+  }
+  if (typeof valor === 'object') {
+    if (typeof valor.nome === 'string' && valor.nome.trim()) {
+      return valor.nome;
+    }
+    for (const item of Object.values(valor)) {
+      const preview = obterNomePreviewIngrediente(item);
+      if (preview) return preview;
+    }
+  }
+  return null;
+}
 
 function setupMontagemUI() {
   // initial render
   renderMontagemStep(montagemState.currentStep);
+  atualizarBotaoMontagemTopo();
 
   // buttons
   document.getElementById('btnProximaEtapa').addEventListener('click', () => goToStep(montagemState.currentStep + 1));
   document.getElementById('btnEtapaAnterior').addEventListener('click', () => goToStep(montagemState.currentStep - 1));
   document.getElementById('btnAdicionarMontagemTopo').addEventListener('click', async () => {
-    // Validar obrigatórios: pão, proteína (carne) e queijo
-    const obrigatorios = [
-      { key: 'pao', nome: 'Pão' },
-      { key: 'carne', nome: 'Proteína' },
-      { key: 'queijo', nome: 'Queijo' }
-    ];
-    for (const obrig of obrigatorios) {
-      if (!montagemState.selecionados[obrig.key]) {
-        mostrarNotificacao(`Selecione uma opção de ${obrig.nome} antes de adicionar ao carrinho.`, 'aviso', 'Seleção obrigatória');
-        return;
-      }
+    const botaoAdicionar = document.getElementById('btnAdicionarMontagemTopo');
+    if (!botaoAdicionar || botaoAdicionar.disabled) {
+      mostrarNotificacao('Selecione pão e ao menos um item de outra categoria.', 'aviso', 'Seleção obrigatória');
+      return;
     }
 
-    const ingredientes = montagemState.selecionados;
+    const ingredientes = {
+      selecionados: montagemState.selecionados,
+      quantidades: montagemState.quantidades
+    };
     const quantidade = parseInt(document.getElementById('quantidadeMontagem').value) || 1;
     if (quantidade <= 0) {
       mostrarNotificacao('Quantidade deve ser maior que zero.', 'aviso', 'Quantidade inválida');
       return;
     }
-    const precoBase = calcularPrecoMontagem(ingredientes);
+    const precoBase = calcularPrecoMontagem();
     const montagem = { ingredientes, quantidade, precoBase };
     const sucesso = await adicionarMontagemLancheAoCarrinho(montagem);
     if (sucesso) {
@@ -420,17 +591,16 @@ function setupMontagemUI() {
       goToStep(step);
     });
   });
+  atualizarBotaoMontagemTopo();
 }
 
 function calcularPrecoMontagem(ingredientes) {
-  let total = 0;
-  for (const key of Object.keys(ingredientes)) {
-    const val = ingredientes[key];
-    if (!val) continue;
-    const price = optionPrices[val] || 0;
-    total += price;
-  }
-  return Number(total.toFixed(2));
+  return Number(
+    obterItensResumoMontagem().reduce((total, item) => {
+      const price = optionPrices[item.nome] || 0;
+      return total + (price * item.quantidade);
+    }, 0).toFixed(2)
+  );
 }
 
 function goToStep(stepIndex) {
@@ -465,6 +635,7 @@ function renderMontagemStep(stepIndex) {
   document.getElementById('btnProximaEtapa').style.display = stepIndex === montagemSteps.length - 1 ? 'none' : 'inline-block';
 
   renderResumo();
+  atualizarBotaoMontagemTopo();
 }
 
 function renderCardsForStep(key) {
@@ -482,33 +653,111 @@ function renderCardsForStep(key) {
   main.forEach(op => {
     const price = optionPrices[op] || 0;
     const card = document.createElement('div');
-    card.className = 'card-principal' + ((montagemState.selecionados[key] === op) ? ' selected' : '');
+    card.className = `card-principal montagem-card ${estaSelecionadoMontagem(key, op) ? 'selected' : ''} ${key === 'pao' ? 'is-single' : ''}`;
     // caminho fixo para imagens de itens customizados via mapa estático
     const imgFile = customImageMap[op] || `${op}.jpg`;
     const imgSrc = encodeURI(`assets/itens_custom/img/${imgFile}`);
+    const mostrarQuantidade = key !== 'pao';
     card.innerHTML = `
+      <span class="card-selecionado-badge">(selecionado)</span>
       <img class="card-principal-img" src="${imgSrc}" alt="${op}" loading="lazy">
       <div class="nome-opcao">${op}</div>
       <div class="valor-opcao">R$ ${price.toFixed(2)}</div>
+      ${mostrarQuantidade ? `
+      <div class="card-montagem-quantidade">
+        <label>Quantidade</label>
+        <div class="card-quantidade-stepper">
+          <button type="button" class="card-quantidade-btn card-qtd-menos" aria-label="Diminuir quantidade">−</button>
+          <input type="number" class="card-quantidade-input" min="1" value="${obterQuantidadeMontagem(key, op)}" step="1" inputmode="numeric">
+          <button type="button" class="card-quantidade-btn card-qtd-mais" aria-label="Aumentar quantidade">+</button>
+        </div>
+      </div>
+      ` : ''}
     `;
-    card.addEventListener('click', () => { selectOption(key, op); renderCardsForStep(key); });
+
+    const quantidadeInput = card.querySelector('.card-quantidade-input');
+    const botaoMenos = card.querySelector('.card-qtd-menos');
+    const botaoMais = card.querySelector('.card-qtd-mais');
+
+    card.addEventListener('click', () => alternarSelecaoMontagem(key, op));
+    if (mostrarQuantidade && quantidadeInput && botaoMenos && botaoMais) {
+      botaoMenos.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const quantidadeAtual = parseInt(quantidadeInput.value, 10) || 1;
+        const novaQuantidade = Math.max(1, quantidadeAtual - 1);
+        quantidadeInput.value = novaQuantidade;
+        definirQuantidadeMontagem(key, op, novaQuantidade);
+      });
+      botaoMais.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const quantidadeAtual = parseInt(quantidadeInput.value, 10) || 1;
+        const novaQuantidade = quantidadeAtual + 1;
+        quantidadeInput.value = novaQuantidade;
+        definirQuantidadeMontagem(key, op, novaQuantidade);
+      });
+      quantidadeInput.addEventListener('change', (e) => {
+        const valor = parseInt(e.target.value, 10);
+        const quantidade = Number.isInteger(valor) && valor > 0 ? valor : 1;
+        quantidadeInput.value = quantidade;
+        definirQuantidadeMontagem(key, op, quantidade);
+      });
+    }
     principais.appendChild(card);
   });
 
   extra.forEach(op => {
     const price = optionPrices[op] || 0;
     const card = document.createElement('div');
-    card.className = 'other-card' + ((montagemState.selecionados[key] === op) ? ' selected' : '');
+    card.className = `other-card montagem-card ${estaSelecionadoMontagem(key, op) ? 'selected' : ''} ${key === 'pao' ? 'is-single' : ''}`;
     const imgFile = customImageMap[op] || `${op}.jpg`;
     const imgSrc = encodeURI(`assets/itens_custom/img/${imgFile}`);
+    const mostrarQuantidade = key !== 'pao';
     card.innerHTML = `
+      <span class="card-selecionado-badge">(selecionado)</span>
       <img class="other-card-thumb" src="${imgSrc}" alt="${op}" loading="lazy">
       <div class="other-card-info">
         <div class="other-card-text">${op}</div>
         <div class="valor-opcao">R$ ${price.toFixed(2)}</div>
       </div>
+      ${mostrarQuantidade ? `
+      <div class="card-montagem-quantidade">
+        <label>Quantidade</label>
+        <div class="card-quantidade-stepper">
+          <button type="button" class="card-quantidade-btn card-qtd-menos" aria-label="Diminuir quantidade">−</button>
+          <input type="number" class="card-quantidade-input" min="1" value="${obterQuantidadeMontagem(key, op)}" step="1" inputmode="numeric">
+          <button type="button" class="card-quantidade-btn card-qtd-mais" aria-label="Aumentar quantidade">+</button>
+        </div>
+      </div>
+      ` : ''}
     `;
-    card.addEventListener('click', () => { selectOption(key, op); renderCardsForStep(key); });
+
+    const quantidadeInput = card.querySelector('.card-quantidade-input');
+    const botaoMenos = card.querySelector('.card-qtd-menos');
+    const botaoMais = card.querySelector('.card-qtd-mais');
+
+    card.addEventListener('click', () => alternarSelecaoMontagem(key, op));
+    if (mostrarQuantidade && quantidadeInput && botaoMenos && botaoMais) {
+      botaoMenos.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const quantidadeAtual = parseInt(quantidadeInput.value, 10) || 1;
+        const novaQuantidade = Math.max(1, quantidadeAtual - 1);
+        quantidadeInput.value = novaQuantidade;
+        definirQuantidadeMontagem(key, op, novaQuantidade);
+      });
+      botaoMais.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const quantidadeAtual = parseInt(quantidadeInput.value, 10) || 1;
+        const novaQuantidade = quantidadeAtual + 1;
+        quantidadeInput.value = novaQuantidade;
+        definirQuantidadeMontagem(key, op, novaQuantidade);
+      });
+      quantidadeInput.addEventListener('change', (e) => {
+        const valor = parseInt(e.target.value, 10);
+        const quantidade = Number.isInteger(valor) && valor > 0 ? valor : 1;
+        quantidadeInput.value = quantidade;
+        definirQuantidadeMontagem(key, op, quantidade);
+      });
+    }
     others.appendChild(card);
   });
 
@@ -517,47 +766,78 @@ function renderCardsForStep(key) {
     opcoes.slice(3).forEach(op => {
       const price = optionPrices[op] || 0;
       const card = document.createElement('div');
-      card.className = 'other-card' + ((montagemState.selecionados[key] === op) ? ' selected' : '');
+      card.className = `other-card montagem-card ${estaSelecionadoMontagem(key, op) ? 'selected' : ''} ${key === 'pao' ? 'is-single' : ''}`;
       const imgFile = customImageMap[op] || `${op}.jpg`;
       const imgSrc = encodeURI(`assets/itens_custom/img/${imgFile}`);
+      const mostrarQuantidade = key !== 'pao';
       card.innerHTML = `
+        <span class="card-selecionado-badge">(selecionado)</span>
         <img class="other-card-thumb" src="${imgSrc}" alt="${op}" loading="lazy">
         <div class="other-card-info">
           <div class="other-card-text">${op}</div>
           <div class="valor-opcao">R$ ${price.toFixed(2)}</div>
         </div>
+        ${mostrarQuantidade ? `
+        <div class="card-montagem-quantidade">
+          <label>Quantidade</label>
+          <div class="card-quantidade-stepper">
+            <button type="button" class="card-quantidade-btn card-qtd-menos" aria-label="Diminuir quantidade">−</button>
+            <input type="number" class="card-quantidade-input" min="1" value="${obterQuantidadeMontagem(key, op)}" step="1" inputmode="numeric">
+            <button type="button" class="card-quantidade-btn card-qtd-mais" aria-label="Aumentar quantidade">+</button>
+          </div>
+        </div>
+        ` : ''}
       `;
-      card.addEventListener('click', () => { selectOption(key, op); renderCardsForStep(key); });
+
+      const quantidadeInput = card.querySelector('.card-quantidade-input');
+      const botaoMenos = card.querySelector('.card-qtd-menos');
+      const botaoMais = card.querySelector('.card-qtd-mais');
+
+      card.addEventListener('click', () => alternarSelecaoMontagem(key, op));
+      if (mostrarQuantidade && quantidadeInput && botaoMenos && botaoMais) {
+        botaoMenos.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const quantidadeAtual = parseInt(quantidadeInput.value, 10) || 1;
+          const novaQuantidade = Math.max(1, quantidadeAtual - 1);
+          quantidadeInput.value = novaQuantidade;
+          definirQuantidadeMontagem(key, op, novaQuantidade);
+        });
+        botaoMais.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const quantidadeAtual = parseInt(quantidadeInput.value, 10) || 1;
+          const novaQuantidade = quantidadeAtual + 1;
+          quantidadeInput.value = novaQuantidade;
+          definirQuantidadeMontagem(key, op, novaQuantidade);
+        });
+        quantidadeInput.addEventListener('change', (e) => {
+          const valor = parseInt(e.target.value, 10);
+          const quantidade = Number.isInteger(valor) && valor > 0 ? valor : 1;
+          quantidadeInput.value = quantidade;
+          definirQuantidadeMontagem(key, op, quantidade);
+        });
+      }
       others.appendChild(card);
     });
   }
 }
 
-function selectOption(key, option) {
-  montagemState.selecionados[key] = option;
-  renderResumo();
-}
-
 function renderResumo() {
   const tbody = document.querySelector('#resumoTabela tbody');
   tbody.innerHTML = '';
+  const itens = obterItensResumoMontagem();
   let total = 0;
-  for (const step of montagemSteps) {
-    const key = step.key;
-    const nome = montagemState.selecionados[key];
-    if (nome) {
-      const tr = document.createElement('tr');
-      const tdNome = document.createElement('td');
-      tdNome.textContent = step.label + ': ' + nome;
-      const tdVal = document.createElement('td');
-      const price = optionPrices[nome] || 0;
-      tdVal.textContent = `R$ ${price.toFixed(2)}`;
-      tr.appendChild(tdNome);
-      tr.appendChild(tdVal);
-      tbody.appendChild(tr);
-      total += price;
-    }
-  }
+  itens.forEach((item) => {
+    const tr = document.createElement('tr');
+    const tdNome = document.createElement('td');
+    tdNome.textContent = `${item.categoria}: ${item.nome} x${item.quantidade}`;
+    const tdVal = document.createElement('td');
+    const price = (optionPrices[item.nome] || 0) * item.quantidade;
+    tdVal.textContent = `R$ ${price.toFixed(2)}`;
+    tr.appendChild(tdNome);
+    tr.appendChild(tdVal);
+    tbody.appendChild(tr);
+    total += price;
+  });
   document.getElementById('resumoTotal').textContent = `R$ ${total.toFixed(2)}`;
 }
 
@@ -584,15 +864,21 @@ function obterDadosMontagem() {
 
 // Evento de adicionar montagem
 async function handleAdicionarMontagem() {
-  const dados = obterDadosMontagem();
-  if (!dados) return;
+  const itens = obterItensResumoMontagem();
+  if (!itens.length) {
+    mostrarNotificacao('Selecione itens para montar o lanche.', 'aviso', 'Seleção obrigatória');
+    return;
+  }
   const quantidadeInput = document.getElementById('quantidadeMontagem');
   let quantidade = parseInt(quantidadeInput.value);
   if (isNaN(quantidade) || quantidade < 1) quantidade = 1;
   const montagem = {
-    ingredientes: dados,
+    ingredientes: {
+      selecionados: montagemState.selecionados,
+      quantidades: montagemState.quantidades
+    },
     quantidade: quantidade,
-    precoBase: 32.90 // preço do customizado
+    precoBase: calcularPrecoMontagem()
   };
   const sucesso = await adicionarMontagemLancheAoCarrinho(montagem);
   if (sucesso) {
@@ -617,15 +903,8 @@ function atualizarCarrinhoUI() {
     if (item.tipo === 'pronto') {
       thumbSrc = imagensLanches[item.nome] ? encodeURI(imagensLanches[item.nome]) : encodeURI(`assets/lanches_prontos/img/${item.nome}.png`);
     } else if (item.tipo === 'customizado') {
-      // try to pick first ingredient image
-      const ing = item.ingredientes || {};
-      let candidateName = null;
-      for (const k of Object.keys(ing)) {
-        const v = ing[k];
-        if (!v) continue;
-        if (Array.isArray(v) && v.length) { candidateName = v[0]; break; }
-        if (typeof v === 'string') { candidateName = v; break; }
-      }
+      const ing = item.ingredientes?.selecionados || item.ingredientes || {};
+      const candidateName = obterNomePreviewIngrediente(ing);
       if (candidateName) {
         const imgFile = customImageMap[candidateName] || `${candidateName}.jpg`;
         thumbSrc = encodeURI(`assets/itens_custom/img/${imgFile}`);
@@ -641,7 +920,10 @@ function atualizarCarrinhoUI() {
     itemHTML.innerHTML = `
       <img class="thumb" src="${thumbSrc}" alt="${item.nome}">
       <div class="item-info">
-        <div class="nome">${item.nome}</div>
+        <div class="item-titulo">
+          <div class="nome">${item.nome}</div>
+          <span class="item-quantidade">x${item.quantidade}</span>
+        </div>
         <div class="detalhe">${detalhe}</div>
       </div>
       <div class="item-acao">
@@ -699,6 +981,8 @@ function exibirPedidos(pedidos) {
     html += `<div class="pedido-item">
       <strong>#${ped.id}</strong> - ${ped.cliente}<br>
       ${ped.itens.length} item(ns) - Total: R$ ${calcularTotalPedido(ped.itens).toFixed(2)}<br>
+      ${ped.observacao ? `<small>Observação: ${ped.observacao}</small><br>` : ''}
+      ${ped.itens.some((item) => item.tipo === 'customizado' && item.ingredientes?.selecionados) ? '<small>Montagem com múltiplas seleções e quantidades.</small><br>' : ''}
       <small>${new Date(ped.data).toLocaleString()}</small>
     </div>`;
   });

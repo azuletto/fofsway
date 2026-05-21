@@ -47,7 +47,7 @@ app.delete('/deletarCarrinho', (req, res) => {
 
 // Rota para enviar pedido (converte carrinho em pedido)
 app.put('/enviarPedido', (req, res) => {
-  const { nomeCliente } = req.body;
+  const { nomeCliente, observacaoPedido } = req.body;
   if (!nomeCliente || nomeCliente.trim() === '') {
     return res.status(400).json({ erro: 'Nome do cliente é obrigatório' });
   }
@@ -59,6 +59,7 @@ app.put('/enviarPedido', (req, res) => {
     id: proximoIdPedido++,
     cliente: nomeCliente,
     itens: [...carrinhoAtual],
+    observacao: observacaoPedido ? String(observacaoPedido).trim() : '',
     data: new Date().toISOString(),
     status: 'recebido'
   };

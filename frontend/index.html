@@ -42,9 +42,9 @@
         <h2>Monte seu Lanche do seu jeito</h2>
         <div class="montagem-area">
           <div class="montagem-topbar">
-              <div class="passo-titulo" id="passoTitulo">PASSO 1 ESCOLHA PÃO</div>
+              <div class="passo-titulo" id="passoTitulo">PASSO 1 ESCOLHA BASE</div>
               <div class="passos-tags" id="passosTags">
-                <span class="passo-tag" data-step="0">PÃO</span>
+                <span class="passo-tag" data-step="0">BASE</span>
                 <span class="passo-tag" data-step="1">PROTEÍNA</span>
                 <span class="passo-tag" data-step="2">QUEIJO</span>
                 <span class="passo-tag" data-step="3">SALADAS</span>
@@ -79,7 +79,7 @@
           <div id="mensagemValidacaoMontagem" class="mensagem-erro"></div>
           <div class="montagem-actions-fixed" aria-hidden="false">
             <button id="btnEtapaAnterior" class="btn-pequeno">Etapa Anterior</button>
-            <button id="btnAdicionarMontagemTopo" class="btn-principal">Adicionar ao Carrinho</button>
+            <button id="btnAdicionarMontagemTopo" class="montagem-btn-adicionar" disabled>Adicionar ao Carrinho</button>
             <button id="btnProximaEtapa" class="btn-pequeno">Próxima Etapa</button>
           </div>
         </div>
@@ -108,6 +108,10 @@
             <div class="cliente-area">
               <input type="text" id="nomeCliente" placeholder="Seu nome" class="input-cliente">
               <button id="btnEnviarPedido" class="btn-principal" type="button">Enviar Pedido</button>
+            </div>
+            <div class="observacao-area">
+              <label for="observacaoPedido">Observação</label>
+              <textarea id="observacaoPedido" class="textarea-observacao" rows="3" placeholder="Ex.: sem cebola, retirar maionese, entregar na recepção"></textarea>
             </div>
           </div>
         </section>
