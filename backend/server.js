@@ -149,8 +149,6 @@ app.get('/listarCarrinho', (req, res) => {
   res.json({ carrinho: estado.carrinho, token, isAdmin: isAdminToken(token) });
 });
 
-// (removido) endpoint /listarImagensCustom — frontend usa caminhos estáticos
-
 // Rota para adicionar item ao carrinho
 app.post('/adicionarCarrinho', (req, res) => {
   const token = obterTokenRequisicao(req, res, true);

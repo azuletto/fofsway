@@ -237,8 +237,6 @@ const customImageMap = {
   'Tofu': 'tofu.jpg'
 };
 
-// Use caminhos estáticos já definidos; não há lookups dinâmicos aqui.
-
 function renderizarCardsLanches() {
   const grid = document.getElementById('cardsGrid');
   grid.innerHTML = '';
