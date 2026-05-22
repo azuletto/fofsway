@@ -94,6 +94,7 @@
         <div>
           <p class="dialog-subtitulo">Seu pedido</p>
           <h3><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i> Carrinho</h3>
+          <div id="indicadorPontos" class="indicador-pontos" aria-live="polite"></div>
         </div>
         <button id="btnFecharCarrinho" type="button" class="dialog-fechar" aria-label="Fechar carrinho">
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -105,6 +106,11 @@
           <div id="carrinhoLista"></div>
           <div class="carrinho-acoes">
             <button id="btnLimparCarrinho" class="btn-secundario" type="button">Limpar Carrinho</button>
+            <label class="pontos-resgate">
+              <input id="usarPontosDesconto" type="checkbox">
+              <span>Usar 5 pontos para ganhar 20% de desconto</span>
+            </label>
+            <div id="resumoDescontoCarrinho" class="resumo-desconto-carrinho"></div>
             <div class="cliente-area">
               <input type="text" id="nomeCliente" placeholder="Seu nome" class="input-cliente">
               <button id="btnEnviarPedido" class="btn-principal" type="button">Enviar Pedido</button>

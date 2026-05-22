@@ -3,6 +3,8 @@ const axiosInstance = axios.create(); // usa a mesma origem
 
 // Estado global
 let carrinho = [];
+let pontosDisponiveis = 0;
+let usarPontosDesconto = false;
 
 // Helpers para persistência local (fallback quando servidor estiver vazio)
 function saveCarrinhoLocal() {
@@ -124,7 +126,7 @@ async function enviarPedido() {
     return;
   }
   try {
-    const response = await axiosInstance.put('/enviarPedido', { nomeCliente, observacaoPedido });
+    const response = await axiosInstance.put('/enviarPedido', { nomeCliente, observacaoPedido, usarPontosDesconto });
     mostrarNotificacao(response.data.mensagem ? `Pedido enviado! ${response.data.mensagem}` : 'Pedido enviado com sucesso!', 'sucesso', 'Pedido enviado');
     // Após enviar, o carrinho é esvaziado no backend, então atualizamos o estado local
     carrinho = [];
@@ -137,8 +139,12 @@ async function enviarPedido() {
     }
     // Atualiza a lista de pedidos
     listarPedidos();
-    // Desafio extra: adicionar pontos de fidelidade
-    adicionarPontosFidelidade(nomeCliente);
+    usarPontosDesconto = false;
+    const checkboxPontos = document.getElementById('usarPontosDesconto');
+    if (checkboxPontos) {
+      checkboxPontos.checked = false;
+    }
+    await atualizarIndicadorPontos();
   } catch (error) {
     console.error('Erro ao enviar pedido:', error);
     const msg = error.response?.data?.erro || 'Erro desconhecido.';
@@ -889,6 +895,8 @@ function atualizarCarrinhoUI() {
   const container = document.getElementById('carrinhoLista');
   if (!carrinho.length) {
     container.innerHTML = '<p>Carrinho vazio</p>';
+    renderResumoDescontoCarrinho(0, 0, 0);
+    atualizarControlePontos(false);
     atualizarBadgeCarrinho();
     return;
   }
@@ -936,6 +944,11 @@ function atualizarCarrinhoUI() {
   totalDiv.style.fontWeight = '800';
   totalDiv.textContent = `Total: R$ ${total.toFixed(2)}`;
   container.appendChild(totalDiv);
+  const podeUsarPontos = pontosDisponiveis >= 5;
+  const desconto = usarPontosDesconto && podeUsarPontos ? Number((total * 0.2).toFixed(2)) : 0;
+  const totalFinal = Number((total - desconto).toFixed(2));
+  renderResumoDescontoCarrinho(total, desconto, totalFinal);
+  atualizarControlePontos(podeUsarPontos);
   atualizarBadgeCarrinho();
 
   // Attach remover handlers
@@ -966,6 +979,71 @@ function atualizarBadgeCarrinho() {
   const totalItens = carrinho.reduce((acc, item) => acc + (item.quantidade || 0), 0);
   badge.textContent = totalItens > 0 ? String(totalItens) : '';
   badge.classList.toggle('is-empty', totalItens === 0);
+
+  // atualizar indicador de pontos sempre que a badge mudar
+  try { atualizarIndicadorPontos(); } catch (e) { /* non-blocking */ }
+}
+
+function renderResumoDescontoCarrinho(totalBruto, desconto, totalFinal) {
+  const resumo = document.getElementById('resumoDescontoCarrinho');
+  if (!resumo) return;
+
+  resumo.innerHTML = `
+    <div class="linha"><span>Total bruto</span><strong>R$ ${Number(totalBruto || 0).toFixed(2)}</strong></div>
+    <div class="linha"><span>Desconto com pontos</span><strong>- R$ ${Number(desconto || 0).toFixed(2)}</strong></div>
+    <div class="linha"><span>Total final</span><strong>R$ ${Number(totalFinal || 0).toFixed(2)}</strong></div>
+  `;
+}
+
+function atualizarControlePontos(podeUsarPontos) {
+  const checkbox = document.getElementById('usarPontosDesconto');
+  const label = document.querySelector('.pontos-resgate');
+  if (!checkbox || !label) return;
+
+  checkbox.disabled = !podeUsarPontos;
+  label.classList.toggle('desabilitado', !podeUsarPontos);
+  if (!podeUsarPontos) {
+    checkbox.checked = false;
+    usarPontosDesconto = false;
+  }
+}
+
+async function atualizarIndicadorPontos() {
+  const el = document.getElementById('indicadorPontos');
+  if (!el) return;
+  const pontosPrevistos = carrinho.reduce((acc, it) => acc + (Number(it.quantidade) || 1), 0);
+  el.classList.remove('vazio');
+  el.innerHTML = '';
+  try {
+    const resp = await axiosInstance.get('/pontos');
+    const data = resp.data || {};
+    if (data.isAdmin) {
+      el.innerHTML = `<span class="icone"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></span><span>Modo administrador</span>`;
+      return;
+    }
+    pontosDisponiveis = Number(data.pontos) || 0;
+    const checkbox = document.getElementById('usarPontosDesconto');
+    if (checkbox) {
+      checkbox.disabled = pontosDisponiveis < 5;
+      if (checkbox.disabled) {
+        checkbox.checked = false;
+        usarPontosDesconto = false;
+      }
+    }
+    el.innerHTML = `<span class="icone"><i class="fa-solid fa-star" aria-hidden="true"></i></span><span>${pontosDisponiveis} pts</span><span aria-hidden="true">•</span><span>Este pedido: +${pontosPrevistos} pts</span>`;
+    if (pontosDisponiveis === 0 && pontosPrevistos === 0) {
+      el.classList.add('vazio');
+    }
+    const totalBruto = carrinho.reduce((acc, item) => acc + ((Number(item.preco) || 0) * (Number(item.quantidade) || 1)), 0);
+    const podeUsarPontos = pontosDisponiveis >= 5;
+    const desconto = usarPontosDesconto && podeUsarPontos ? Number((totalBruto * 0.2).toFixed(2)) : 0;
+    const totalFinal = Number((totalBruto - desconto).toFixed(2));
+    renderResumoDescontoCarrinho(totalBruto, desconto, totalFinal);
+    atualizarControlePontos(podeUsarPontos);
+  } catch (err) {
+    el.innerHTML = `<span class="icone"><i class="fa-solid fa-star" aria-hidden="true"></i></span><span>—</span><span>Erro ao carregar pontos</span>`;
+    el.classList.add('vazio');
+  }
 }
 
 function exibirPedidos(pedidos) {
@@ -1003,18 +1081,6 @@ function normalizarStatusPedido(status) {
   return 'em produção';
 }
 
-// Desafio extra: sistema de fidelidade (pontos)
-let pontosFidelidade = JSON.parse(localStorage.getItem('fofsway_pontos')) || {};
-
-function adicionarPontosFidelidade(cliente) {
-  if (!cliente) return;
-  const pontosAtuais = pontosFidelidade[cliente] || 0;
-  const pontosGanhos = Math.floor(carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0) / 5); // 1 ponto a cada R$5
-  const novosPontos = pontosAtuais + pontosGanhos;
-  pontosFidelidade[cliente] = novosPontos;
-  localStorage.setItem('fofsway_pontos', JSON.stringify(pontosFidelidade));
-}
-
 // Inicialização da página
 function init() {
   renderizarCardsLanches();
@@ -1047,6 +1113,7 @@ function init() {
         }
       }
       atualizarCarrinhoUI();
+      atualizarIndicadorPontos();
     } catch (err) {
       console.warn('Não foi possível carregar o carrinho na inicialização.', err);
     }
@@ -1140,7 +1207,10 @@ function init() {
   btnAbrirCarrinho.addEventListener('click', () => {
     if (!carrinhoDialog.open) {
       carrinhoDialog.showModal();
-      requestAnimationFrame(posicionarCarrinho);
+      requestAnimationFrame(() => {
+        posicionarCarrinho();
+        try { atualizarIndicadorPontos(); } catch (e) { /* ignore */ }
+      });
     }
   });
   btnFecharCarrinho.addEventListener('click', () => {
@@ -1166,6 +1236,13 @@ function init() {
   });
   document.getElementById('btnLimparCarrinho').addEventListener('click', deletarCarrinho);
   document.getElementById('btnEnviarPedido').addEventListener('click', enviarPedido);
+  const checkboxPontos = document.getElementById('usarPontosDesconto');
+  if (checkboxPontos) {
+    checkboxPontos.addEventListener('change', () => {
+      usarPontosDesconto = checkboxPontos.checked;
+      atualizarCarrinhoUI();
+    });
+  }
   const oldBtnAdd = document.getElementById('btnAdicionarMontagem');
   if (oldBtnAdd) oldBtnAdd.addEventListener('click', handleAdicionarMontagem);
 }

@@ -260,6 +260,73 @@ body {
   gap: 0.55rem;
 }
 
+.indicador-pontos {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: #065f2f;
+  background: rgba(11,94,46,0.08);
+  padding: 6px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.indicador-pontos .icone {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0b5e2e;
+  font-size: 0.95rem;
+}
+.indicador-pontos.vazio {
+  opacity: 0.7;
+}
+
+.pontos-resgate {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.85rem;
+  background: linear-gradient(135deg, rgba(11,94,46,0.09), rgba(251,191,36,0.12));
+  color: #14532d;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.pontos-resgate input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #0b5e2e;
+}
+
+.pontos-resgate.desabilitado {
+  opacity: 0.55;
+}
+
+.resumo-desconto-carrinho {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.8rem;
+  background: #f0fdf4;
+  border: 1px solid rgba(11,94,46,0.12);
+  color: #14532d;
+  font-size: 0.9rem;
+}
+
+.resumo-desconto-carrinho .linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.resumo-desconto-carrinho .linha strong {
+  font-weight: 800;
+}
+
 .dialog-fechar {
   width: 2.6rem;
   height: 2.6rem;
@@ -1505,7 +1572,7 @@ body {
   transform: translateY(1px) !important;
 }
 
-/* Painel ADM */
+/* Painel Pedidos */
 .admin-body {
   background: #f5f7fb;
 }
